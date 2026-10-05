@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PulseV - Прогресс</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        h1 { font-size: 22px; margin-bottom: 10px; text-align: center; }
+        .stats-card {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 20px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .chart-img {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+        .btn {
+            width: 100%;
+            max-width: 350px;
+            padding: 16px;
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+        }        .btn:active { opacity: 0.8; }
+        .loader { font-size: 16px; color: var(--tg-theme-hint-color, #999); margin-top: 40px; }
+    </style>
+</head>
+<body>
+
+    <div class="loader" id="loader">Загрузка профиля...</div>
+
+    <div id="app" style="display:none; width: 100%; align-items: center;">
+        <h1 id="greeting">Твой прогресс</h1>
+        
+        <div class="stats-card">
+            <div style="font-size: 18px; font-weight: bold;" id="status-text">Статус</div>
+            <img id="chart" class="chart-img" src="" alt="Диаграмма">
+        </div>
+
+        <button class="btn" onclick="train()">🎯 Начать тренировку</button>
+        <button class="btn" onclick="subscribe()" style="background-color: transparent; border: 2px solid var(--tg-theme-button-color); color: var(--tg-theme-button-color);">💎 Купить Premium</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        // Получаем ID юзера из Telegram
+        let userId = null;
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            userId = tg.initDataUnsafe.user.id;
+            document.getElementById('greeting').innerText = `Привет, ${tg.initDataUnsafe.user.first_name}!`;
+        }
+
+        if (!userId) {
+            document.getElementById('loader').innerText = "Ошибка: откройте через кнопку в боте.";
+        } else {
+            // Загружаем данные и картинку
+            document.getElementById('chart').src = `/api/chart?user_id=${userId}`;
+            
+            fetch(`/api/stats?user_id=${userId}`)
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('loader').style.display = 'none';
+                    document.getElementById('app').style.display = 'flex';
+                    document.getElementById('status-text').innerText = data.status;
+                })
+                .catch(err => {
+                    document.getElementById('loader').innerText = "Ошибка загрузки данных.";
+                });
+        }
+        function train() {
+            tg.sendData('action=train');
+        }
+        function subscribe() {
+            tg.sendData('action=subscribe');
+        }
+    </script>
+</body>
+</html>
